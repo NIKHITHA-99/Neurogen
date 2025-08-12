@@ -29,7 +29,7 @@ def home():
 
 # Generate molecules and return image
 @app.route('/generate', methods=['POST'])
-@app.route('/generate', methods=['POST'])
+
 def generate():
     try:
         data = request.get_json()

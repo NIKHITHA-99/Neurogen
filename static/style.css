@@ -4,6 +4,31 @@ html {
     scroll-behavior: smooth;
 }
 
+
+    .iframe-wrapper {
+  position: relative;      /* anchor for absolute children */
+  width: 90%;               /* make it responsive */
+  height: 90vh;             /* keep height proportional to viewport */
+  overflow: hidden;         /* hide cropped parts of iframe */
+  border: 2px solid #333;   /* frame around iframe */
+  border-radius: 10px;      /* rounded corners */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* subtle shadow */
+  background: white;        /* clean background */
+  margin: 40px auto;        /* space around & center horizontally */
+}
+
+
+    iframe {
+  width: calc(100% + 100px); /* make iframe wider than wrapper */
+  height: calc(100% + 1045px); /* keep your bottom crop logic */
+  border: none;
+  position: absolute;
+  top: -440px;   /* crop top */
+  left: 50px;  /* crop right side by shifting left */
+}
+
+
+    
 body {
     font-family: 'Rajdhani', sans-serif;
     background-color: #0a0a1a;
