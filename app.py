@@ -7,7 +7,7 @@ import base64
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
-from io import BytesIO
+from io import BytesIO, StringIO
 
 # Flask app setup
 app = Flask(__name__, template_folder='templates')
@@ -22,14 +22,13 @@ model.eval()
 smiles_list = np.load("smiles_list.npy", allow_pickle=True)
 fingerprints = np.load("fingerprints.npy", allow_pickle=True)
 
-# Homepage route (optional)
+# Homepage route
 @app.route('/')
 def home():
     return render_template('index.html')
 
 # Generate molecules and return image
 @app.route('/generate', methods=['POST'])
-
 def generate():
     try:
         data = request.get_json()
@@ -48,9 +47,9 @@ def generate():
         input_tensor = torch.tensor(arr).unsqueeze(0).to(device)
 
         # Apply noise + denoise (simulating one step of reverse diffusion)
-        t = torch.tensor([500], dtype=torch.long).to(device)  # arbitrary timestep
+        t = torch.tensor([500], dtype=torch.long).to(device)
         noise = torch.randn_like(input_tensor)
-        noisy_input = input_tensor * (1 - 0.5) + noise * 0.5  # simple q_sample
+        noisy_input = input_tensor * (1 - 0.5) + noise * 0.5
 
         with torch.no_grad():
             denoised_fp = model(noisy_input, t).squeeze(0)
@@ -72,6 +71,34 @@ def generate():
         return jsonify({'error': str(e)}), 500
 
 
+# Generate 3D SDF from SMILES
+@app.route('/get3d', methods=['POST'])
+def get3d():
+    try:
+        data = request.get_json()
+        smiles = data.get("smiles")
+
+        mol = Chem.MolFromSmiles(smiles)
+        if not mol:
+            return jsonify({'error': 'Invalid SMILES'}), 400
+
+        mol = Chem.AddHs(mol)
+        AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
+        AllChem.MMFFOptimizeMolecule(mol)
+
+        from rdkit.Chem import SDWriter
+        sio = StringIO()
+        writer = SDWriter(sio)
+        writer.write(mol)
+        writer.close()
+        sdf_data = sio.getvalue()
+
+        return jsonify({'sdf': sdf_data})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # Start the server
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=7860, debug=False)
